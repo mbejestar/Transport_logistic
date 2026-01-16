@@ -28,7 +28,7 @@ const TransportDatum = Data.Object({
 ===================================================== */
 
 const BLOCKFROST_URL = "https://cardano-preprod.blockfrost.io/api/v0";
-const BLOCKFROST_KEY = "PUT_YOUR_BLOCKFROST_KEY";
+const BLOCKFROST_KEY = "preprodYjRkHfcazNkL0xxG9C2RdUbUoTrG7wip";
 const NETWORK = "Preprod";
 
 /* =====================================================
