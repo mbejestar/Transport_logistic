@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transport Escrow – Cardano</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1a33;
+      --panel2:#0c162d;
+      --card:#0f2147;
+      --ink:#e9eefc;
+      --muted:#a9b6d6;
+      --line:rgba(255,255,255,.08);
+      --accent:#7c5cff;
+      --accent2:#19d3ff;
+      --good:#35d07f;
+      --warn:#ffcc66;
+      --bad:#ff5c7c;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 18px;
+      --radius2: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: var(--sans);
+      background:
+        radial-gradient(1100px 600px at 10% -10%, rgba(124,92,255,.35), transparent 50%),
+        radial-gradient(900px 500px at 90% 0%, rgba(25,211,255,.22), transparent 55%),
+        radial-gradient(1200px 700px at 70% 110%, rgba(53,208,127,.10), transparent 55%),
+        var(--bg);
+      color:var(--ink);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{
+      width:min(1150px, 92vw);
+      margin: 0 auto;
+      padding: 28px 0 60px;
+    }
+
+    /* Header */
+    .top{
+      display:flex;
+      gap:18px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:18px;
+    }
+    .brand{
+      display:flex;
+      gap:14px;
+      align-items:center;
+    }
+    .logo{
+      width:46px;height:46px;
+      border-radius:14px;
+      background: linear-gradient(135deg, rgba(124,92,255,1), rgba(25,211,255,1));
+      box-shadow: 0 18px 60px rgba(124,92,255,.18);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:-20%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), transparent 42%);
+      transform: rotate(18deg);
+    }
+    .title h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+    .title p{
+      margin:2px 0 0;
+      color:var(--muted);
+      font-size: 13px;
+    }
+
+    .right-actions{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .pill{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: var(--warn);
+      box-shadow: 0 0 0 4px rgba(255,204,102,.15);
+    }
+    .pill b{font-size:12px}
+    .pill span{color:var(--muted);font-size:12px}
+
+    /* Buttons */
+    .btn{
+      border:0;
+      padding: 11px 14px;
+      border-radius: 12px;
+      color: var(--ink);
+      font-weight: 700;
+      cursor:pointer;
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+    }
+    .btn:hover{ background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.14); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(124,92,255,1), rgba(25,211,255,1));
+      border-color: transparent;
+      box-shadow: 0 18px 60px rgba(124,92,255,.20);
+    }
+    .btn.good{
+      background: linear-gradient(135deg, rgba(53,208,127,1), rgba(25,211,255,.75));
+      border-color: transparent;
+      box-shadow: 0 18px 60px rgba(53,208,127,.16);
+    }
+    .btn.danger{
+      background: linear-gradient(135deg, rgba(255,92,124,1), rgba(255,204,102,.8));
+      border-color: transparent;
+      box-shadow: 0 18px 60px rgba(255,92,124,.14);
+    }
+    .btn.ghost{
+      background: rgba(0,0,0,0);
+    }
+
+    /* Layout grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+      .right-actions{justify-content:flex-start}
+    }
+
+    /* Cards */
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .head{
+      padding: 16px 16px 10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0,0,0,.12);
+    }
+    .card .head h2{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+    .card .head p{
+      margin:4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .card .body{
+      padding: 14px 16px 16px;
+    }
+
+    /* Form */
+    .form{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form.one{ grid-template-columns: 1fr; }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    label{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    input, select, textarea{
+      width:100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      color: var(--ink);
+      outline:none;
+      font-family: var(--sans);
+      font-size: 13px;
+    }
+    input::placeholder, textarea::placeholder{ color: rgba(233,238,252,.35); }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(124,92,255,.55);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.15);
+    }
+    textarea{min-height: 86px; resize: vertical;}
+    .help{
+      font-size: 11px;
+      color: rgba(233,238,252,.55);
+      line-height: 1.35;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 10px;
+    }
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 640px){
+      .form{grid-template-columns: 1fr;}
+      .split{grid-template-columns: 1fr;}
+    }
+
+    /* Status + log */
+    .status{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .stat{
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.14);
+    }
+    .stat .k{
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .stat .v{
+      font-family: var(--mono);
+      font-size: 12px;
+      word-break: break-all;
+      line-height: 1.45;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .tag .mini{
+      width:8px;height:8px;border-radius:50%;
+      background: var(--warn);
+      box-shadow: 0 0 0 4px rgba(255,204,102,.12);
+    }
+    .log{
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      font-family: var(--mono);
+      font-size: 12px;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      min-height: 140px;
+    }
+    .hint{
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(233,238,252,.62);
+      line-height: 1.4;
+    }
+    .divider{
+      height:1px;background:var(--line); margin: 14px 0;
+    }
+
+    /* Small badges */
+    .badge{
+      font-size: 11px;
+      color: rgba(233,238,252,.78);
+      background: rgba(124,92,255,.12);
+      border:1px solid rgba(124,92,255,.22);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-family: var(--mono);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">
+          <h1>Transport Escrow</h1>
+          <p>Cardano (Plutus V2) · Multisig payouts · Vendor settlement</p>
+        </div>
+      </div>
+
+      <div class="right-actions">
+        <div class="pill" title="Connect a Cardano wallet (Lace recommended)">
+          <div class="dot" id="netDot"></div>
+          <div>
+            <b id="netLabel">Not connected</b><br/>
+            <span id="netSub">Preprod</span>
+          </div>
+        </div>
+        <button class="btn primary" id="connectBtn">Connect Wallet</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: ACTIONS -->
+      <div class="card">
+        <div class="head">
+          <div>
+            <h2>Actions</h2>
+            <p>Create escrow, release to vendor, then close the trip (transport only).</p>
+          </div>
+          <span class="badge" id="scriptBadge">Script: (not loaded)</span>
+        </div>
+
+        <div class="body">
+          <!-- Create Escrow -->
+          <div class="card" style="border-radius: var(--radius2); box-shadow:none;">
+            <div class="head">
+              <div>
+                <h2>1) Create Escrow</h2>
+                <p>Company locks a trip budget into the script with the initial datum.</p>
+              </div>
+              <span class="tag"><span class="mini"></span>Requires company signature</span>
+            </div>
+            <div class="body">
+              <div class="form">
+                <div class="field">
+                  <label>Company Address</label>
+                  <input id="companyAddr" placeholder="addr_test1..." />
+                  <div class="help">Wallet that funds the escrow and receives any remaining budget when closing.</div>
+                </div>
+                <div class="field">
+                  <label>Vendor Address (fuel/toll)</label>
+                  <input id="vendorAddr" placeholder="addr_test1..." />
+                  <div class="help">Vendor receives payouts when releasing funds.</div>
+                </div>
+
+                <div class="field">
+                  <label>Driver Address</label>
+                  <input id="driverAddr" placeholder="addr_test1..." />
+                </div>
+                <div class="field">
+                  <label>Fleet Manager Address</label>
+                  <input id="fleetManagerAddr" placeholder="addr_test1..." />
+                </div>
+
+                <div class="field">
+                  <label>Operations Manager Address</label>
+                  <input id="managerAddr" placeholder="addr_test1..." />
+                </div>
+                <div class="field">
+                  <label>Finance Address</label>
+                  <input id="financeAddr" placeholder="addr_test1..." />
+                </div>
+
+                <div class="field">
+                  <label>Budget (ADA)</label>
+                  <input id="budgetAda" type="number" step="0.1" placeholder="e.g. 50" />
+                </div>
+                <div class="field">
+                  <label>Initial Milestone</label>
+                  <input id="milestone0" type="number" step="1" placeholder="e.g. 0" value="0" />
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn good" id="createEscrowBtn">Create Escrow</button>
+                <button class="btn ghost" id="prefillBtn">Prefill from connected wallet</button>
+              </div>
+              <div class="hint">Tip: If the connected wallet is the company wallet, click “Prefill” to auto-fill Company Address.</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Release to Vendor -->
+          <div class="card" style="border-radius: var(--radius2); box-shadow:none;">
+            <div class="head">
+              <div>
+                <h2>2) Release to Vendor</h2>
+                <p>Spend script UTxO and pay vendor; keep remaining budget locked with updated datum.</p>
+              </div>
+              <span class="tag"><span class="mini"></span>Requires multisig pair</span>
+            </div>
+            <div class="body">
+              <div class="form">
+                <div class="field">
+                  <label>Company Address (to find escrow)</label>
+                  <input id="companyAddr2" placeholder="addr_test1..." />
+                </div>
+                <div class="field">
+                  <label>Vendor Address (to find escrow)</label>
+                  <input id="vendorAddr2" placeholder="addr_test1..." />
+                </div>
+
+                <div class="field">
+                  <label>Pay Amount (ADA)</label>
+                  <input id="payAda" type="number" step="0.1" placeholder="e.g. 5" />
+                  <div class="help">This will be paid to Vendor Address.</div>
+                </div>
+                <div class="field">
+                  <label>Next Milestone</label>
+                  <input id="nextMilestone" type="number" step="1" placeholder="e.g. 1" value="1" />
+                </div>
+
+                <div class="field">
+                  <label>Approval Mode</label>
+                  <select id="approvalMode">
+                    <option value="driverFleet">Driver + Fleet Manager</option>
+                    <option value="managerFinance">Manager + Finance</option>
+                  </select>
+                  <div class="help">On-chain: (driver+fleet manager) OR (manager+finance).</div>
+                </div>
+
+                <div class="field">
+                  <label>Current Milestone (optional)</label>
+                  <input id="currentMilestone" type="number" step="1" placeholder="leave empty to ignore" />
+                  <div class="help">If provided, UI will match escrow UTxO by milestone too.</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn good" id="buildReleaseBtn">Build Release TX</button>
+                <button class="btn" id="signBtn">Sign TX (current wallet)</button>
+                <button class="btn primary" id="submitBtn">Submit Signed TX</button>
+              </div>
+
+              <div class="split" style="margin-top:12px;">
+                <div class="field">
+                  <label>Unsigned / Partially Signed TX CBOR (copy/paste for co-sign)</label>
+                  <textarea id="txCbor" placeholder="CBOR hex will appear here after building..."></textarea>
+                  <div class="help">If multisig requires another wallet, copy this to the other signer to co-sign.</div>
+                </div>
+                <div class="field">
+                  <label>Signed TX CBOR (final, ready to submit)</label>
+                  <textarea id="signedTxCbor" placeholder="After signing, the signed CBOR will appear here..."></textarea>
+                  <div class="help">Submit this once all required signatures are present.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Close Trip -->
+          <div class="card" style="border-radius: var(--radius2); box-shadow:none;">
+            <div class="head">
+              <div>
+                <h2>3) Close Trip</h2>
+                <p>Return remaining budget to company. Requires manager + finance signatures.</p>
+              </div>
+              <span class="tag"><span class="mini"></span>Manager + Finance</span>
+            </div>
+            <div class="body">
+              <div class="form">
+                <div class="field">
+                  <label>Company Address (to find escrow)</label>
+                  <input id="companyAddr3" placeholder="addr_test1..." />
+                </div>
+                <div class="field">
+                  <label>Vendor Address (to find escrow)</label>
+                  <input id="vendorAddr3" placeholder="addr_test1..." />
+                </div>
+                <div class="field">
+                  <label>Current Milestone (optional)</label>
+                  <input id="currentMilestoneClose" type="number" step="1" placeholder="leave empty to ignore" />
+                </div>
+                <div class="field">
+                  <label>&nbsp;</label>
+                  <button class="btn danger" id="buildCloseBtn">Build Close TX</button>
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn" id="signCloseBtn">Sign Close TX</button>
+                <button class="btn primary" id="submitCloseBtn">Submit Close TX</button>
+              </div>
+
+              <div class="split" style="margin-top:12px;">
+                <div class="field">
+                  <label>Close TX CBOR</label>
+                  <textarea id="closeTxCbor" placeholder="CBOR hex will appear here..."></textarea>
+                </div>
+                <div class="field">
+                  <label>Signed Close TX CBOR</label>
+                  <textarea id="closeSignedTxCbor" placeholder="Signed CBOR will appear here..."></textarea>
+                </div>
+              </div>
+
+              <div class="hint">If manager and finance are different wallets, co-sign like above: build → sign on one wallet → copy signed CBOR → sign on the other wallet → submit.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: STATUS -->
+      <div class="card">
+        <div class="head">
+          <div>
+            <h2>Status</h2>
+            <p>Connection, script info, and logs.</p>
+          </div>
+          <button class="btn" id="clearLogBtn">Clear Log</button>
+        </div>
+        <div class="body status">
+          <div class="stat">
+            <div class="k">Connected Wallet Address</div>
+            <div class="v" id="walletAddrView">—</div>
+          </div>
+          <div class="stat">
+            <div class="k">Connected Wallet PKH</div>
+            <div class="v" id="walletPkhView">—</div>
+          </div>
+          <div class="stat">
+            <div class="k">Script Address</div>
+            <div class="v" id="scriptAddrView">—</div>
+          </div>
+          <div class="stat">
+            <div class="k">Log</div>
+            <div class="log" id="log">Ready.</div>
+          </div>
+
+          <div class="hint">
+            <b>How to use multisig:</b><br/>
+            Build TX → Sign with signer #1 → copy “Signed TX CBOR” to signer #2 → signer #2 signs again → submit.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       Minimal JS Wiring (calls functions you already have)
+       - Replace imports with your offchain file exports.
+       - This is just UI wiring, not contract logic.
+  ====================================================== -->
+   <script type="module" src="app.js"></script>
+</body>
+</html>
